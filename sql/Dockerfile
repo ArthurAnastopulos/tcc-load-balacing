@@ -1,20 +1,23 @@
-# Dockerfile para o PostgreSQL com configurações específicas
+# Use Debian as base image
+FROM debian:buster-slim
 
-# Use uma imagem base do PostgreSQL
-FROM postgres:latest
+# Install MariaDB server
+RUN apt-get update && \
+    apt-get install -y gnupg2 wget unzip mariadb-server && \
+    apt-get clean
 
-# Instale as bibliotecas necessárias
-RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+# Initialize and start MariaDB
+RUN mkdir -p /var/run/mysqld && \
+    chown -R mysql:mysql /var/run/mysqld && \
+    /etc/init.d/mysql start && \
+    mysqladmin -u root password 'tccIfsc2024'
 
-# Copie o script Python e os arquivos de inicialização SQL
-COPY script_cache.py /docker-entrypoint-initdb.d/script_cache.py
-COPY init-script.sql /docker-entrypoint-initdb.d/init-script.sql
+# Create OpenSIPS database and tables
+RUN echo "CREATE DATABASE opensips;" | mysql -u root -p'tccIfsc2024' && \
+    opensips-cli -x database create opensips && \
+    mysql opensips -e "show tables"
 
-# Defina variáveis de ambiente se necessário
-ENV PYTHONPATH=/usr/local/lib/python3.8/dist-packages
-
-# Comando padrão para iniciar o contêiner
-CMD ["postgres"]
+# Create MySQL user and grant privileges
+RUN mysql -u root -p'tccIfsc2024' -e "CREATE USER 'opensips'@'localhost' IDENTIFIED BY 'opensipsrw';" && \
+    mysql -u root -p'tccIfsc2024' -e "GRANT ALL PRIVILEGES ON opensips.* TO 'opensips'@'localhost';" && \
+    mysql -u root -p'tccIfsc2024' -e "FLUSH PRIVILEGES"
