@@ -43,15 +43,15 @@ RUN useradd -ms /bin/bash asterisk
 RUN rm /etc/asterisk/sip.conf
 
 # Criar diretório para as chaves do Asterisk
-RUN mkdir -p /etc/asterisk/keys/
+# 808RUN mkdir -p /etc/asterisk/keys/
 
 # Copie seus certificados DTLS para o diretório padrão do Asterisk
-COPY ./asterisk-conf/asterisk.crt /etc/asterisk/keys/asterisk.crt
-COPY ./asterisk-conf/asterisk.key /etc/asterisk/keys/asterisk.key
+# COPY ./asterisk-conf/asterisk.crt /etc/asterisk/keys/asterisk.crt
+# COPY ./asterisk-conf/asterisk.key /etc/asterisk/keys/asterisk.key
 
 # Definir permissões e propriedades adequadas para os arquivos
-RUN chmod 600 /etc/asterisk/keys/asterisk.crt /etc/asterisk/keys/asterisk.key \
-    && chown asterisk:asterisk /etc/asterisk/keys/asterisk.crt /etc/asterisk/keys/asterisk.key
+# RUN chmod 600 /etc/asterisk/keys/asterisk.crt /etc/asterisk/keys/asterisk.key \
+    # && chown asterisk:asterisk /etc/asterisk/keys/asterisk.crt /etc/asterisk/keys/asterisk.key
 
 # # Configurar o caminho para o OpenSSL no script ast_tls_cert
 # RUN sed -i 's|OPENSSL=openssl|OPENSSL=/usr/bin/openssl|g' /usr/local/src/asterisk*/contrib/scripts/ast_tls_cert
