@@ -5,10 +5,8 @@ services:
       context: ./asterisk
       dockerfile: Dockerfile
     environment:
-      - SERVER_IP=191.36.8.100
-    networks:
-      my_network:
-        ipv4_address: 191.36.8.100
+      - SERVER_IP=191.36.8.50
+      - SERVER_IP6=2804:1454:1004:101::50
     ports:
       - "5060:5060/udp"  # SIP (UDP)
 
@@ -17,23 +15,11 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro  # Monta o diretório Let's Encrypt com os certificados SSL
+      - ./nginx/nginx.conf:/etc/nginx/sites-enabled/default:ro  # Monta o diretório Let's Encrypt com os certificados SSL
+      - ./nginx/letsencrypt:/etc/letsencrypt:ro  # Monta o diretório Let's Encrypt com os certificados SSL
     ports:
       - "80:80"    # HTTP
       - "443:443"  # HTTPS
     depends_on:
       - my_asterisk_container
-    networks:
-      my_network:
-        ipv4_address: 191.36.8.50  # IP da VM para comunicação interna
-        ipv6_address: "2001:0db8::2"  # IPv6 do seu servidor
-    command: tail -f /dev/null    
-
-networks:
-  my_network:
-    driver: bridge
-    ipam:
-      driver: default
-      config:
-        - subnet: "191.36.8.0/24"
-        - subnet: "2804:1454:1004:101::/64"
+    command: nginx -g 'daemon off;'
