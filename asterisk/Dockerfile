@@ -5,7 +5,7 @@ FROM debian:buster-slim
 ARG SERVER_IP
 
 # Configurar os módulos desejados
-ENV ASTERISK_MODULES="res_srtp res_pjsip res_pjsip_session res_pjsip_registrar res_pjsip_transport_websocket cdr_sqlite3_custom cel_sqlite3_custom pbx_spool"
+ENV ASTERISK_MODULES="chan_sip res_srtp res_pjsip res_pjsip_session res_pjsip_registrar res_pjsip_transport_websocket cdr_sqlite3_custom cel_sqlite3_custom pbx_spool"
 
 # Atualizar o repositório e instalar pacotes necessários
 RUN apt-get update && \
