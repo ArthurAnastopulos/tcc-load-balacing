@@ -3,7 +3,9 @@ FROM debian:buster-slim
 
 # Update repositories and install Nginx and Certbot
 RUN apt-get update && \
-    apt-get install -y nginx certbot python3-certbot-nginx && \
+    apt-get install -y nginx certbot python3-certbot-nginx \
+    apt-get update && \
+    apt-get install -y nginx-module-stream-geoip nginx-module-stream-geoip2 nginx-module-stream-mod-rtmp && \
     apt-get clean
 
 # Expose HTTP and HTTPS ports

@@ -15,7 +15,7 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/sites-enabled/default:ro  # Monta o diretório Let's Encrypt com os certificados SSL
+      - ./nginx/nginx.conf:/etc/nginx/sites-enabled/default:ro
       - ./nginx/letsencrypt:/etc/letsencrypt:ro  # Monta o diretório Let's Encrypt com os certificados SSL
     ports:
       - "80:80"    # HTTP

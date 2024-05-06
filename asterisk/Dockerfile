@@ -67,8 +67,8 @@ RUN chown -R asterisk:asterisk /var/log
 COPY ./asterisk-conf/http.conf /etc/asterisk/http.conf
 COPY ./asterisk-conf/extensions.conf /etc/asterisk/extensions.conf
 # COPY ./asterisk-conf/rtp.conf /etc/asterisk/rtp.conf
-COPY ./asterisk-conf/pjsip.conf /etc/asterisk/sip.conf
-# COPY ./asterisk-conf/pjsip.conf /etc/asterisk/pjsip.conf
+# COPY ./asterisk-conf/pjsip.conf /etc/asterisk/sip.conf
+COPY ./asterisk-conf/pjsip.conf /etc/asterisk/pjsip.conf
 
 # Expor a porta do Asterisk (mude para a porta do Asterisk, se necessário)
 EXPOSE 5060
