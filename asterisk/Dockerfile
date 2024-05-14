@@ -71,9 +71,10 @@ COPY ./asterisk-conf/extensions.conf /etc/asterisk/extensions.conf
 COPY ./asterisk-conf/pjsip.conf /etc/asterisk/pjsip.conf
 
 # Expor a porta do Asterisk (mude para a porta do Asterisk, se necessário)
-EXPOSE 5060
-EXPOSE 8088
-EXPOSE 8089
+EXPOSE 5060/udp
+EXPOSE 5060/tcp
+EXPOSE 5061/tcp
+EXPOSE 8080/tcp
 
 # Comando padrão para iniciar o Asterisk
 CMD ["/usr/sbin/asterisk", "-vvvdddf", "-T", "-W", "-U", "asterisk", "-p"]

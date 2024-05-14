@@ -3,14 +3,12 @@ FROM debian:buster-slim
 
 # Update repositories and install Nginx and Certbot
 RUN apt-get update && \
-    apt-get install -y nginx certbot python3-certbot-nginx \
-    apt-get update && \
-    apt-get install -y nginx-module-stream-geoip nginx-module-stream-geoip2 nginx-module-stream-mod-rtmp && \
+    apt-get install -y nginx certbot python3-certbot-nginx libnginx-mod-stream libnginx-mod-http-geoip libnginx-mod-rtmp && \
     apt-get clean
 
 # Expose HTTP and HTTPS ports
-EXPOSE 80
-EXPOSE 443
+EXPOSE 80/tcp
+EXPOSE 443/tcp
 
 # Add a script to automatically renew SSL certificates
 COPY certbot_renew.sh /usr/local/bin/
