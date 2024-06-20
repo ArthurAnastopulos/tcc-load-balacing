@@ -1,25 +1,25 @@
 version: '3'
-
 services:
-  backend:
-    build: ./backend
-    ports:
-      - "3000:3000"
-    # Adicionar outras configurações necessárias para o backend, caso necessário
-
-  frontend:
-    build: ./frontend
-    ports:
-      - "80:80"
-    # Adicionar outras configurações necessárias para o frontend, caso necessário
-
-  nginx:
-    image: nginx:latest
-    ports:
-      - "8080:80"
+  my_asterisk_container:
+    build:
+      context: ./asterisk
+      dockerfile: Dockerfile
+    environment:
+      - SERVER_IP=191.36.8.50
+      - SERVER_IP6=2804:1454:1004:101::50
+  my_nginx_proxy:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/letsencrypt:/etc/letsencrypt:ro  # Monta o diretório Let's Encrypt com os certificados SSL
+    ports:
+      - "80:80/tcp"      # HTTP
+      - "443:443/tcp"    # HTTPS
+      - "5060:5060/udp" # SIP (UDP)
+      - "5060:5060/tcp" # SIP (TCP)
+      - "5061:5061/tcp" # SIP (TLS)
     depends_on:
-      - backend
-      - frontend
-    # Adicionar outras configurações necessárias para o Nginx, caso necessário
+      - my_asterisk_container
+    command: nginx -g 'daemon off;'
