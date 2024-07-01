@@ -7,6 +7,16 @@ services:
     environment:
       - SERVER_IP=191.36.8.50
       - SERVER_IP6=2804:1454:1004:101::50
+    volumes:
+      - ./asterisk/asterisk-conf/ari.conf:/etc/asterisk/ari.conf
+      - ./asterisk/asterisk-conf/asterisk.conf:/etc/asterisk/asterisk.conf
+      - ./asterisk/asterisk-conf/extensions.conf:/etc/asterisk/extensions.conf
+      - ./asterisk/asterisk-conf/host.conf:/etc/asterisk/host.conf
+      - ./asterisk/asterisk-conf/manager.conf:/etc/asterisk/manager.conf
+      - ./asterisk/asterisk-conf/modules.conf:/etc/asterisk/modules.conf
+      - ./asterisk/asterisk-conf/pjsip.conf:/etc/asterisk/pjsip.conf
+      - ./asterisk/asterisk-conf/pjsip.conf.d:/etc/asterisk/pjsip.conf.d
+      - ./asterisk/asterisk-conf/rtp.conf:/etc/asterisk/rtp.conf
   my_nginx_proxy:
     build:
       context: ./nginx

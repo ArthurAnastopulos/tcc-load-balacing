@@ -42,44 +42,12 @@ RUN useradd -ms /bin/bash asterisk
 # Remover o arquivo de configuração padrão do Asterisk
 RUN rm /etc/asterisk/sip.conf
 
-# Criar diretório para as chaves do Asterisk
-# 808RUN mkdir -p /etc/asterisk/keys/
-
-# Copie seus certificados DTLS para o diretório padrão do Asterisk
-# COPY ./asterisk-conf/asterisk.crt /etc/asterisk/keys/asterisk.crt
-# COPY ./asterisk-conf/asterisk.key /etc/asterisk/keys/asterisk.key
-
-# Definir permissões e propriedades adequadas para os arquivos
-# RUN chmod 600 /etc/asterisk/keys/asterisk.crt /etc/asterisk/keys/asterisk.key \
-    # && chown asterisk:asterisk /etc/asterisk/keys/asterisk.crt /etc/asterisk/keys/asterisk.key
-
-# # Configurar o caminho para o OpenSSL no script ast_tls_cert
-# RUN sed -i 's|OPENSSL=openssl|OPENSSL=/usr/bin/openssl|g' /usr/local/src/asterisk*/contrib/scripts/ast_tls_cert
-
-# #Gerar certificado TLS para o Asterisk
-# RUN /usr/local/src/asterisk*/contrib/scripts/ast_tls_cert -C $SERVER_IP -O "My Cool App" -d /etc/asterisk/keys/
-
 # Defina as permissões adequadas para o diretório do banco de dados do Asterisk
 RUN chown -R asterisk:asterisk /var/lib/asterisk
 RUN chown -R asterisk:asterisk /var/log
 
-# Copiar arquivos de configuração personalizados
-COPY ./asterisk-conf/modules.conf /etc/asterisk/modules.conf
-COPY ./asterisk-conf/asterisk.conf /etc/asterisk/asterisk.conf
-COPY ./asterisk-conf/manager.conf /etc/asterisk/manager.conf
-COPY ./asterisk-conf/http.conf /etc/asterisk/http.conf
-COPY ./asterisk-conf/extensions.conf /etc/asterisk/extensions.conf
-COPY ./asterisk-conf/pjsip.conf /etc/asterisk/pjsip.conf
-
-RUN mkdir /etc/asterisk/pjsip.conf.d
-COPY ./asterisk-conf/pjsip.conf.d/0_modelo.conf /etc/asterisk/pjsip.conf.d/0_modelo.conf
-COPY ./asterisk-conf/pjsip.conf.d/1060.conf /etc/asterisk/pjsip.conf.d/1060.conf
-COPY ./asterisk-conf/pjsip.conf.d/1061.conf /etc/asterisk/pjsip.conf.d/1061.conf
-
 # Expor a porta do Asterisk (mude para a porta do Asterisk, se necessário)
 EXPOSE 5060
-EXPOSE 8088
-EXPOSE 8089
 
 # Comando padrão para iniciar o Asterisk
 CMD ["/usr/sbin/asterisk", "-vvvdddf", "-T", "-W", "-U", "asterisk", "-p"]
