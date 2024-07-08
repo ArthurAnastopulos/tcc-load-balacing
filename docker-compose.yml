@@ -7,8 +7,7 @@ services:
     environment:
       - SERVER_IP=191.36.8.50
       - SERVER_IP6=2804:1454:1004:101::50
-    volumes:
-      - ./asterisk/asterisk-conf/ari.conf:/etc/asterisk/ari.conf
+    command: tail -f /dev/null    
   # my_asterisk_container:
   #   build:
   #     context: ./asterisk

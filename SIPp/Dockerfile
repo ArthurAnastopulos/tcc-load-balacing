@@ -8,9 +8,6 @@ RUN apt-get update && \
     wget --no-check-certificate "https://github.com/SIPp/sipp/releases/download/v$SIPP_VERSION/sipp-$SIPP_VERSION.tar.gz" && \
     tar -xzf sipp-$SIPP_VERSION.tar.gz -C . && \
     cd sipp-$SIPP_VERSION && \
-    ./build.sh --full && \
-    ./sipp -sn uas -bg
+    ./build.sh --full
 
 EXPOSE 5060
-
-CMD ["/bin/bash"]
