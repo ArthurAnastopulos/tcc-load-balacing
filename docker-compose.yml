@@ -1,23 +1,32 @@
 version: '3'
 services:
-  my_asterisk_container:
+  my_sipp_container:
     build:
-      context: ./asterisk
+      context: ./SIPp
       dockerfile: Dockerfile
     environment:
       - SERVER_IP=191.36.8.50
       - SERVER_IP6=2804:1454:1004:101::50
     volumes:
       - ./asterisk/asterisk-conf/ari.conf:/etc/asterisk/ari.conf
-      - ./asterisk/asterisk-conf/asterisk.conf:/etc/asterisk/asterisk.conf
-      - ./asterisk/asterisk-conf/extensions.conf:/etc/asterisk/extensions.conf
-      - ./asterisk/asterisk-conf/host.conf:/etc/asterisk/host.conf
-      - ./asterisk/asterisk-conf/manager.conf:/etc/asterisk/manager.conf
-      - ./asterisk/asterisk-conf/modules.conf:/etc/asterisk/modules.conf
-      - ./asterisk/asterisk-conf/pjsip.conf:/etc/asterisk/pjsip.conf
-      - ./asterisk/asterisk-conf/pjsip.conf.d:/etc/asterisk/pjsip.conf.d
-      - ./asterisk/asterisk-conf/rtp.conf:/etc/asterisk/rtp.conf
-      - ./asterisk/asterisk-conf/audio/betinho.wav:/var/lib/asterisk/sounds/betinho.wav
+  # my_asterisk_container:
+  #   build:
+  #     context: ./asterisk
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     - SERVER_IP=191.36.8.50
+  #     - SERVER_IP6=2804:1454:1004:101::50
+  #   volumes:
+  #     - ./asterisk/asterisk-conf/ari.conf:/etc/asterisk/ari.conf
+  #     - ./asterisk/asterisk-conf/asterisk.conf:/etc/asterisk/asterisk.conf
+  #     - ./asterisk/asterisk-conf/extensions.conf:/etc/asterisk/extensions.conf
+  #     - ./asterisk/asterisk-conf/host.conf:/etc/asterisk/host.conf
+  #     - ./asterisk/asterisk-conf/manager.conf:/etc/asterisk/manager.conf
+  #     - ./asterisk/asterisk-conf/modules.conf:/etc/asterisk/modules.conf
+  #     - ./asterisk/asterisk-conf/pjsip.conf:/etc/asterisk/pjsip.conf
+  #     - ./asterisk/asterisk-conf/pjsip.conf.d:/etc/asterisk/pjsip.conf.d
+  #     - ./asterisk/asterisk-conf/rtp.conf:/etc/asterisk/rtp.conf
+  #     - ./asterisk/asterisk-conf/audio/betinho.wav:/var/lib/asterisk/sounds/betinho.wav
   my_nginx_proxy:
     build:
       context: ./nginx
@@ -32,5 +41,6 @@ services:
       - "5060:5060/tcp" # SIP (TCP)
       - "5061:5061/tcp" # SIP (TLS)
     depends_on:
-      - my_asterisk_container
+      - my_sipp_container
+      # - my_asterisk_container
     command: nginx -g 'daemon off;'

@@ -5,7 +5,7 @@ clean:
 	docker images -q | xargs docker rmi 
 
 build:
-	make -C asterisk
+	make -C SIPp
 	make -C nginx
 
 start:
