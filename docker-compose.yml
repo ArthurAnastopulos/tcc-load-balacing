@@ -16,7 +16,7 @@ services:
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     ports:
-      - "80:80/udp"
+      - "5060:5060/udp"
     depends_on:
       - sip_uas_1
       - sip_uas_2
