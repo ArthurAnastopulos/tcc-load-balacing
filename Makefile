@@ -9,6 +9,7 @@ build:
 	make -C nginx
 
 start:
+	ulimit -n 8192
 	docker-compose up -d
 
 stop:
