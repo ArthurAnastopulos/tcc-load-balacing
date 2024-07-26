@@ -40,10 +40,16 @@ services:
       - --api.insecure=true
       - --providers.docker=true
       - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.default.acme.tlschallenge=true
+      - --certificatesresolvers.default.acme.email=your-email@example.com
+      - --certificatesresolvers.default.acme.storage=/letsencrypt/acme.json
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./letsencrypt:/letsencrypt"
 
   grafana:
     image: grafana/grafana:10.4.3
@@ -56,11 +62,13 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=https://tcc-arthur.sj.ifsc.edu.br
     labels:
-      - traefik.enable=true
-      - traefik.http.routers.grafana.rule=Host(`grafana.tcc-arthur.sj.ifsc.edu.br`)
-      - traefik.http.services.grafana.loadbalancer.server.port=3000
-      - traefik.http.routers.grafana.entryPoints=web
+      - "traefik.enable=true"
+      - "traefik.http.routers.grafana.rule=Host(`tcc-arthur.sj.ifsc.edu.br`)"
+      - "traefik.http.routers.grafana.entrypoints=websecure"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+
 
 volumes:
   influxdb_data:
