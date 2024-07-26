@@ -33,7 +33,7 @@ def capture_traffic(interface, udp_port, rtp_port, udp_csv_file, rtp_csv_file):
         udp_writer.writerow(['Timestamp', 'Source IP', 'Destination IP', 'Source Port', 'Destination Port', 'Protocol', 'Length'])
         
         # Write the header row for RTP traffic
-        rtp_writer.writerow(['Timestamp', 'Source IP', 'Destination IP', 'Source Port', 'Destination Port', 'Protocol', 'Length', 'Sequence Number', 'Extended Sequence Number', 'Timestamp', 'RTP Stream'])
+        rtp_writer.writerow(['Timestamp', 'Source IP', 'Destination IP', 'Source Port', 'Destination Port', 'Protocol', 'Length', 'Sequence Number', 'Timestamp', 'RTP Stream'])
         
         for packet in capture.sniff_continuously():
             # Extract common fields
@@ -50,18 +50,17 @@ def capture_traffic(interface, udp_port, rtp_port, udp_csv_file, rtp_csv_file):
                 rtp = packet.rtp
                 
                 sequence_number = rtp.seq if hasattr(rtp, 'seq') else 'N/A'
-                extended_sequence_number = rtp.extended_seq if hasattr(rtp, 'extended_seq') else 'N/A'
                 rtp_timestamp = rtp.timestamp if hasattr(rtp, 'timestamp') else 'N/A'
                 rtp_stream = rtp.ssrc if hasattr(rtp, 'ssrc') else 'N/A'
                 
                 # Write RTP packet information to the RTP CSV file
-                rtp_writer.writerow([timestamp, src_ip, dst_ip, src_port, dst_port, protocol, length, sequence_number, extended_sequence_number, rtp_timestamp, rtp_stream])
+                rtp_writer.writerow([timestamp, src_ip, dst_ip, src_port, dst_port, protocol, length, sequence_number, rtp_timestamp, rtp_stream])
                 
                 # Flush the buffer to ensure data is written immediately
                 rtp_file.flush()
                 
                 # Print RTP packet summary
-                print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length}, Seq: {sequence_number}, Ext Seq: {extended_sequence_number}, Timestamp: {rtp_timestamp}, RTP Stream: {rtp_stream})")
+                print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length}, Seq: {sequence_number}, Timestamp: {rtp_timestamp}, RTP Stream: {rtp_stream})")
             
             # Check if the packet is from the UDP port
             elif hasattr(packet, 'udp') and (int(src_port) == udp_port or int(dst_port) == udp_port):
