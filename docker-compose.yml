@@ -40,24 +40,10 @@ services:
       - --api.insecure=true
       - --providers.docker=true
       - --entrypoints.web.address=:80
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.le.acme.dnschallenge=true
-      - --certificatesresolvers.le.acme.dnschallenge.provider=tcc-arthur.sj.ifsc.edu.br
-      - --certificatesresolvers.le.acme.email=arthur.as@ifsc.edu.br
-      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "traefik_data:/letsencrypt"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.traefik.rule=Host(`traefik.tcc-arthur.sj.ifsc.edu.br.com`)"
-      - "traefik.http.routers.traefik.entrypoints=websecure"
-      - "traefik.http.routers.traefik.tls=true"
-      - "traefik.http.routers.traefik.tls.certresolver=le"
-      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
 
   grafana:
     image: grafana/grafana:10.4.3
@@ -74,9 +60,7 @@ services:
       - traefik.enable=true
       - traefik.http.routers.grafana.rule=Host(`grafana.tcc-arthur.sj.ifsc.edu.br`)
       - traefik.http.services.grafana.loadbalancer.server.port=3000
-      - traefik.http.routers.grafana.entryPoints=web-secure
-      - traefik.http.routers.grafana.tls.certResolver=default
-      - traefik.http.routers.grafana.tls=true
+      - traefik.http.routers.grafana.entryPoints=web
 
 volumes:
   influxdb_data:
