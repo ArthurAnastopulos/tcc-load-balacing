@@ -1,13 +1,18 @@
 import argparse
-import os
 import pyshark
-from influxdb import InfluxDBClient
+import requests
 from datetime import datetime
 
-def capture_traffic(interface, udp_port, rtp_port, influxdb_url, influxdb_port, influxdb_db):
-    # Initialize InfluxDB client
-    client = InfluxDBClient(host=influxdb_url, port=influxdb_port, database=influxdb_db)
+def write_to_influxdb_http(url, db, json_body):
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    response = requests.post(f'{url}/write?db={db}', data=json_body, headers=headers)
     
+    if response.status_code == 204:
+        print("Data written successfully")
+    else:
+        print(f"Error writing data: {response.text}")
+
+def capture_traffic(interface, udp_port, rtp_port, influxdb_url, influxdb_port, influxdb_db):
     # Use a display filter to capture only traffic on the specified ports
     display_filter = f'udp.port == {udp_port} or udp.port == {rtp_port}'
     capture = pyshark.LiveCapture(interface=interface, display_filter=display_filter)
@@ -32,52 +37,28 @@ def capture_traffic(interface, udp_port, rtp_port, influxdb_url, influxdb_port, 
                 rtp_timestamp = rtp.timestamp if hasattr(rtp, 'timestamp') else 'N/A'
                 rtp_stream = rtp.ssrc if hasattr(rtp, 'ssrc') else 'N/A'
                 
-                json_body = [
-                    {
-                        "measurement": "network_performance",
-                        "tags": {
-                            "type": "RTP",
-                            "src_ip": src_ip,
-                            "dst_ip": dst_ip,
-                            "src_port": src_port,
-                            "dst_port": dst_port
-                        },
-                        "fields": {
-                            "protocol": protocol,
-                            "length": int(length),
-                            "sequence_number": int(sequence_number),
-                            "rtp_timestamp": int(rtp_timestamp),
-                            "rtp_stream": rtp_stream
-                        },
-                        "time": timestamp
-                    }
-                ]
+                line_protocol = (
+                    f"network_performance,type=RTP,src_ip={src_ip},dst_ip={dst_ip},"
+                    f"src_port={src_port},dst_port={dst_port} "
+                    f"protocol=\"{protocol}\",length={length},"
+                    f"sequence_number={sequence_number},rtp_timestamp={rtp_timestamp},"
+                    f"rtp_stream=\"{rtp_stream}\" {int(packet.sniff_time.timestamp() * 1e9)}"
+                )
                 
-                client.write_points(json_body)
+                write_to_influxdb_http(influxdb_url, influxdb_db, line_protocol)
                 
-                print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length}, Seq: {sequence_number}, Timestamp: {rtp_timestamp}, RTP Stream: {rtp_stream})")
+                print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] "
+                      f"(Length: {length}, Seq: {sequence_number}, Timestamp: {rtp_timestamp}, RTP Stream: {rtp_stream})")
             
             elif hasattr(packet, 'udp') and (int(src_port) == udp_port or int(dst_port) == udp_port):
                 # UDP packet
-                json_body = [
-                    {
-                        "measurement": "network_performance",
-                        "tags": {
-                            "type": "UDP",
-                            "src_ip": src_ip,
-                            "dst_ip": dst_ip,
-                            "src_port": src_port,
-                            "dst_port": dst_port
-                        },
-                        "fields": {
-                            "protocol": protocol,
-                            "length": int(length)
-                        },
-                        "time": timestamp
-                    }
-                ]
+                line_protocol = (
+                    f"network_performance,type=UDP,src_ip={src_ip},dst_ip={dst_ip},"
+                    f"src_port={src_port},dst_port={dst_port} "
+                    f"protocol=\"{protocol}\",length={length} {int(packet.sniff_time.timestamp() * 1e9)}"
+                )
                 
-                client.write_points(json_body)
+                write_to_influxdb_http(influxdb_url, influxdb_db, line_protocol)
                 
                 print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length})")
     
