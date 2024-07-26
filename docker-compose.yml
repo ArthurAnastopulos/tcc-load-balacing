@@ -62,7 +62,6 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_SERVER_ROOT_URL=https://tcc-arthur.sj.ifsc.edu.br
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.grafana.rule=Host(`tcc-arthur.sj.ifsc.edu.br`)"
