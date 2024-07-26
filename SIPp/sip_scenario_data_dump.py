@@ -3,9 +3,12 @@ import pyshark
 import requests
 from datetime import datetime
 
-def write_to_influxdb_http(url, db, json_body):
+def write_to_influxdb_http(url, db, port, json_body):
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    response = requests.post(f'{url}/write?db={db}', data=json_body, headers=headers)
+    full_url = f'{url}:{port}/write?db={db}'
+    print(f"Sending data to: {full_url}")
+    print(f"Data: {json_body}")
+    response = requests.post(full_url, data=json_body, headers=headers)
     
     if response.status_code == 204:
         print("Data written successfully")
@@ -45,7 +48,7 @@ def capture_traffic(interface, udp_port, rtp_port, influxdb_url, influxdb_port, 
                     f"rtp_stream=\"{rtp_stream}\" {int(packet.sniff_time.timestamp() * 1e9)}"
                 )
                 
-                write_to_influxdb_http(influxdb_url, influxdb_db, line_protocol)
+                write_to_influxdb_http(influxdb_url, influxdb_db, influxdb_port, line_protocol)
                 
                 print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] "
                       f"(Length: {length}, Seq: {sequence_number}, Timestamp: {rtp_timestamp}, RTP Stream: {rtp_stream})")
@@ -58,7 +61,7 @@ def capture_traffic(interface, udp_port, rtp_port, influxdb_url, influxdb_port, 
                     f"protocol=\"{protocol}\",length={length} {int(packet.sniff_time.timestamp() * 1e9)}"
                 )
                 
-                write_to_influxdb_http(influxdb_url, influxdb_db, line_protocol)
+                write_to_influxdb_http(influxdb_url, influxdb_db, influxdb_port, line_protocol)
                 
                 print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length})")
     
