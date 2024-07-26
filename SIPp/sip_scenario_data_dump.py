@@ -1,19 +1,13 @@
 import argparse
-import csv
-import os
-from datetime import datetime
 import pyshark
+from influxdb_client import InfluxDBClient, Point, WritePrecision
+from influxdb_client.client.write_api import SYNCHRONOUS
+from datetime import datetime
 
-def capture_traffic(interface, udp_port, rtp_port, udp_csv_file, rtp_csv_file):
-    # Ensure the UDP and RTP CSV files are accessible or need to be created
-    for file in [udp_csv_file, rtp_csv_file]:
-        if not os.path.isfile(file):
-            try:
-                with open(file, 'w') as f:
-                    pass
-            except IOError as e:
-                print(f"Error creating file {file}: {e}")
-                return
+def capture_traffic(interface, udp_port, rtp_port, influxdb_url, influxdb_token, influxdb_org, influxdb_bucket):
+    # Initialize InfluxDB client
+    client = InfluxDBClient(url=influxdb_url, token=influxdb_token)
+    write_api = client.write_api(write_options=SYNCHRONOUS)
     
     # Use a display filter to capture only traffic on the specified ports
     display_filter = f'udp.port == {udp_port} or udp.port == {rtp_port}'
@@ -22,19 +16,6 @@ def capture_traffic(interface, udp_port, rtp_port, udp_csv_file, rtp_csv_file):
     print(f"Capturing traffic on interface {interface} for UDP port {udp_port} and RTP port {rtp_port}")
 
     try:
-        # Open the CSV files for writing
-        udp_file = open(udp_csv_file, mode='w', newline='')
-        rtp_file = open(rtp_csv_file, mode='w', newline='')
-        
-        udp_writer = csv.writer(udp_file)
-        rtp_writer = csv.writer(rtp_file)
-        
-        # Write the header row for UDP traffic
-        udp_writer.writerow(['Timestamp', 'Source IP', 'Destination IP', 'Source Port', 'Destination Port', 'Protocol', 'Length'])
-        
-        # Write the header row for RTP traffic
-        rtp_writer.writerow(['Timestamp', 'Source IP', 'Destination IP', 'Source Port', 'Destination Port', 'Protocol', 'Length', 'Sequence Number', 'Timestamp', 'RTP Stream'])
-        
         for packet in capture.sniff_continuously():
             # Extract common fields
             timestamp = packet.sniff_time
@@ -45,50 +26,60 @@ def capture_traffic(interface, udp_port, rtp_port, udp_csv_file, rtp_csv_file):
             protocol = packet.transport_layer if hasattr(packet, 'transport_layer') else 'N/A'
             length = packet.length
             
-            # Check if the packet is from the RTP port
             if hasattr(packet, 'rtp'):
+                # RTP packet
                 rtp = packet.rtp
-                
                 sequence_number = rtp.seq if hasattr(rtp, 'seq') else 'N/A'
                 rtp_timestamp = rtp.timestamp if hasattr(rtp, 'timestamp') else 'N/A'
                 rtp_stream = rtp.ssrc if hasattr(rtp, 'ssrc') else 'N/A'
                 
-                # Write RTP packet information to the RTP CSV file
-                rtp_writer.writerow([timestamp, src_ip, dst_ip, src_port, dst_port, protocol, length, sequence_number, rtp_timestamp, rtp_stream])
+                point = Point("network_performance") \
+                    .tag("type", "RTP") \
+                    .tag("src_ip", src_ip) \
+                    .tag("dst_ip", dst_ip) \
+                    .tag("src_port", src_port) \
+                    .tag("dst_port", dst_port) \
+                    .field("protocol", protocol) \
+                    .field("length", int(length)) \
+                    .field("sequence_number", int(sequence_number)) \
+                    .field("rtp_timestamp", int(rtp_timestamp)) \
+                    .field("rtp_stream", rtp_stream) \
+                    .time(timestamp, WritePrecision.NS)
                 
-                # Flush the buffer to ensure data is written immediately
-                rtp_file.flush()
+                write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=point)
                 
-                # Print RTP packet summary
                 print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length}, Seq: {sequence_number}, Timestamp: {rtp_timestamp}, RTP Stream: {rtp_stream})")
             
-            # Check if the packet is from the UDP port
             elif hasattr(packet, 'udp') and (int(src_port) == udp_port or int(dst_port) == udp_port):
-                # Write UDP packet information to the UDP CSV file
-                udp_writer.writerow([timestamp, src_ip, dst_ip, src_port, dst_port, protocol, length])
+                # UDP packet
+                point = Point("network_performance") \
+                    .tag("type", "UDP") \
+                    .tag("src_ip", src_ip) \
+                    .tag("dst_ip", dst_ip) \
+                    .tag("src_port", src_port) \
+                    .tag("dst_port", dst_port) \
+                    .field("protocol", protocol) \
+                    .field("length", int(length)) \
+                    .time(timestamp, WritePrecision.NS)
                 
-                # Flush the buffer to ensure data is written immediately
-                udp_file.flush()
+                write_api.write(bucket=influxdb_bucket, org=influxdb_org, record=point)
                 
-                # Print UDP packet summary
                 print(f"{timestamp} - {src_ip}:{src_port} -> {dst_ip}:{dst_port} [{protocol}] (Length: {length})")
     
     except KeyboardInterrupt:
         print("Capture stopped.")
-    except IOError as e:
-        print(f"Error writing to CSV files: {e}")
-    finally:
-        # Ensure files are closed properly
-        udp_file.close()
-        rtp_file.close()
+    except Exception as e:
+        print(f"Error capturing traffic: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Capture network traffic and save it to separate CSV files for UDP and RTP traffic.")
+    parser = argparse.ArgumentParser(description="Capture network traffic and save it to InfluxDB for UDP and RTP traffic.")
     parser.add_argument("interface", type=str, help="The network interface to capture traffic on.")
     parser.add_argument("udp_port", type=int, help="The UDP port to filter traffic on.")
     parser.add_argument("rtp_port", type=int, help="The RTP media port to filter traffic on.")
-    parser.add_argument("udp_csv_file", type=str, help="The CSV file to save the captured UDP traffic.")
-    parser.add_argument("rtp_csv_file", type=str, help="The CSV file to save the captured RTP traffic.")
+    parser.add_argument("influxdb_url", type=str, help="The URL of the InfluxDB instance.")
+    parser.add_argument("influxdb_token", type=str, help="The token for accessing InfluxDB.")
+    parser.add_argument("influxdb_org", type=str, help="The organization name for InfluxDB.")
+    parser.add_argument("influxdb_bucket", type=str, help="The bucket name for storing the data in InfluxDB.")
 
     args = parser.parse_args()
-    capture_traffic(args.interface, args.udp_port, args.rtp_port, args.udp_csv_file, args.rtp_csv_file)
+    capture_traffic(args.interface, args.udp_port, args.rtp_port, args.influxdb_url, args.influxdb_token, args.influxdb_org, args.influxdb_bucket)
