@@ -5,7 +5,7 @@ from datetime import datetime
 
 def write_to_influxdb_http(url, db, port, json_body):
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-    full_url = f'{url}:{port}/write?db={db}'
+    full_url = f'http://{url}:{port}/write?db={db}'
     print(f"Sending data to: {full_url}")
     print(f"Data: {json_body}")
     response = requests.post(full_url, data=json_body, headers=headers)
