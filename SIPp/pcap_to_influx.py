@@ -1,7 +1,7 @@
 import requests
 import argparse
 from datetime import datetime, timedelta
-import time
+import matplotlib.pyplot as plt
 
 def write_to_influxdb_http(url, db, port, json_body):
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -23,6 +23,10 @@ def extract_numeric(value):
         return None
 
 def process_txt_to_influx(txt_file, url, db, db_table, port):
+    timestamps = []
+    latencies = []
+    jitters = []
+
     with open(txt_file, 'r') as file:
         lines = file.readlines()
 
@@ -64,9 +68,6 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
             min_jitter = extract_numeric(fields[14])
             mean_jitter = extract_numeric(fields[15])
             max_jitter = extract_numeric(fields[16])
-            # problems = fields[17] if len(fields) > 16 else ''
-
-            print("Min Delta:", min_delta)
 
             # Convert SSRC from hex to decimal
             ssrc = int(ssrc_hex, 16)
@@ -89,16 +90,44 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
                          f"MeanDelta={mean_delta},MaxDelta={max_delta},"
                          f"MinJitter={min_jitter},MeanJitter={mean_jitter},"
                          f"MaxJitter={max_jitter},time={timestamp_ns}")
-            # curl -i -XPOST 'http://localhost:8086/write?db=your_database_name' --data-binary 'network_performance,type=RTP,src_ip=192.168.1.1,dst_ip=192.168.1.2,src_port=1234,dst_port=5678 protocol="UDP",length=128 sequence_number=123 rtp_timestamp=456 rtp_stream="stream1" 1596518400000000000'
+            # write_to_influxdb_http(url, db, port, json_body)
 
-            write_to_influxdb_http(url, db, port, json_body)
+            # Collect data for plotting
+            timestamps.append(start_time_absolute)
+            latencies.append(mean_delta)  # or min_delta, max_delta as needed
+            jitters.append(mean_jitter)   # or min_jitter, max_jitter as needed
 
         except (ValueError, IndexError) as e:
             print(f"Error processing line: {line}")
             print(f"Exception: {e}")
 
+    # Plot metrics
+    plot_metrics(timestamps, latencies, jitters)
+
+def plot_metrics(timestamps, latencies, jitters):
+    plt.figure(figsize=(14, 7))
+
+    plt.subplot(2, 1, 1)
+    plt.plot(timestamps, latencies, linestyle='-', color='b')
+    plt.title('Latency Over Time')
+    plt.xlabel('Time')
+    plt.ylabel('Latency (ms)')
+    plt.grid(True)
+    plt.xticks(rotation=45)
+
+    plt.subplot(2, 1, 2)
+    plt.plot(timestamps, jitters, linestyle='-', color='r')
+    plt.title('Jitter Over Time')
+    plt.xlabel('Time')
+    plt.ylabel('Jitter (ms)')
+    plt.grid(True)
+    plt.xticks(rotation=45)
+
+    plt.tight_layout()
+    plt.show()
+
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Send RTP stream data to InfluxDB')
+    parser = argparse.ArgumentParser(description='Send RTP stream data to InfluxDB and plot metrics')
     parser.add_argument('txt_file', type=str, help='Path to the TXT file containing RTP stream data')
     parser.add_argument('--url', type=str, default='localhost', help='InfluxDB URL')
     parser.add_argument('--db', type=str, default='mydb', help='InfluxDB database name')
