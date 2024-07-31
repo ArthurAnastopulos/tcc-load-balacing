@@ -18,24 +18,33 @@ def write_to_influxdb_http(url, db, port, json_body):
         print(f"Error writing data: {response.text}")
 
 def process_csv_to_influx(csv_file, url, db, db_table, port):
-    with open(csv_file, 'r') as infile:
-        reader = csv.DictReader(infile)
+    df = pd.read_csv(csv_file, delimiter=' ')  # Adjust delimiter as needed
         
-        for row in reader:
-            # Prepare the timestamp in InfluxDB format (ns precision)
+    # Print headers for debugging
+    print("CSV Headers:", df.columns)
+
+    for index, row in df.iterrows():
+        print("Processing row:", row.to_dict())  # Debugging
+
+        try:
             start_time = datetime.strptime(row['Start time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
             end_time = datetime.strptime(row['End time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
-            # Fields
             json_body = (f"{db_table},StartTime=\"{start_time}\",EndTime=\"{end_time}\","
-                      f"SrcPort={row['Port']},DestPort={row['Port']},"
-                      f"Payload=\"{row['Payload']}\",Pkts={row['Pkts']},"
-                      f"Lost={row['Lost']},MinDelta={row['Min Delta(ms)']},"
-                      f"MeanDelta={row['Mean Delta(ms)']},MaxDelta={row['Max Delta(ms)']},"
-                      f"MinJitter={row['Min Jitter(ms)']},MeanJitter={row['Mean Jitter(ms)']},"
-                      f"MaxJitter={row['Max Jitter(ms)']},Problems=\"{row['Problems?']}\"")
+                        f"SrcPort={row['Port']},DestPort={row['Port']},"
+                        f"Payload=\"{row['Payload']}\",Pkts={row['Pkts']},"
+                        f"Lost={row['Lost']},MinDelta={row['Min Delta(ms)']},"
+                        f"MeanDelta={row['Mean Delta(ms)']},MaxDelta={row['Max Delta(ms)']},"
+                        f"MinJitter={row['Min Jitter(ms)']},MeanJitter={row['Mean Jitter(ms)']},"
+                        f"MaxJitter={row['Max Jitter(ms)']},Problems=\"{row['Problems?']}\"")
 
             write_to_influxdb_http(url, db, port, json_body)
+
+        except KeyError as e:
+            print(f"KeyError: Missing column {e} in row {row.to_dict()}")
+        except ValueError as e:
+            print(f"ValueError: Issue with data formatting in row {row.to_dict()}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Send RTP stream data to InfluxDB')
