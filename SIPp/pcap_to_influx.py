@@ -1,6 +1,7 @@
 import requests
 import argparse
 from datetime import datetime, timedelta
+import time
 
 def write_to_influxdb_http(url, db, port, json_body):
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -75,7 +76,8 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
             start_time_ = datetime.strptime(absolute_start_time, "%Y-%m-%d %H:%M:%S")
             start_time_absolute = start_time_ + timedelta(seconds=float(start_time))
             end_time_absolute = start_time_ + timedelta(seconds=float(end_time))
-
+            
+            timestamp_ns = int(time.mktime(start_time_absolute.timetuple()) * 1e9 + start_time_absolute.microsecond * 1e3)
             # Extract numeric part of 'lost'
             lost = extract_numeric(lost_str)
 
@@ -86,7 +88,7 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
                          f"Pkts={pkts},Lost={lost},MinDelta={min_delta},"
                          f"MeanDelta={mean_delta},MaxDelta={max_delta},"
                          f"MinJitter={min_jitter},MeanJitter={mean_jitter},"
-                         f"MaxJitter={max_jitter}")
+                         f"MaxJitter={max_jitter},time={timestamp_ns}")
             # curl -i -XPOST 'http://localhost:8086/write?db=your_database_name' --data-binary 'network_performance,type=RTP,src_ip=192.168.1.1,dst_ip=192.168.1.2,src_port=1234,dst_port=5678 protocol="UDP",length=128 sequence_number=123 rtp_timestamp=456 rtp_stream="stream1" 1596518400000000000'
 
             write_to_influxdb_http(url, db, port, json_body)
