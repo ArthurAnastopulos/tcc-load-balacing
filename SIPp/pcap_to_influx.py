@@ -77,7 +77,7 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
             start_time_absolute = start_time_ + timedelta(seconds=float(start_time))
             end_time_absolute = start_time_ + timedelta(seconds=float(end_time))
             
-            timestamp_ns = int(time.mktime(start_time_absolute.timetuple()) * 1e9 + start_time_absolute.microsecond * 1e3)
+            timestamp_ns = int(start_time_absolute.timestamp())
             # Extract numeric part of 'lost'
             lost = extract_numeric(lost_str)
 
