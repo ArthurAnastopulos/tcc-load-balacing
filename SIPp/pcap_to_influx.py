@@ -66,8 +66,7 @@ def process_csv_to_influx(csv_file, url, db, db_table, port):
             f"start_time={row['Start time']},end_time={row['End time']},pkts={row['Pkts']},"
             f"lost={row['Lost']},min_delta={row['Min Delta(ms)']},mean_delta={row['Mean Delta(ms)']},"
             f"max_delta={row['Max Delta(ms)']},min_jitter={row['Min Jitter(ms)']},"
-            f"mean_jitter={row['Mean Jitter(ms)']},max_jitter={row['Max Jitter(ms)']},"
-            f"problems=\"{row['Problems?']}\""
+            f"mean_jitter={row['Mean Jitter(ms)']},max_jitter={row['Max Jitter(ms)']}"
         )
         write_to_influxdb_http(url, db, port, json_body)
 
