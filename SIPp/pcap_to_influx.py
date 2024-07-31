@@ -29,8 +29,8 @@ def process_csv_to_influx(csv_file, url, db, db_table, port):
 
     # Iterate through the DataFrame rows and create JSON body for InfluxDB
     for _, row in df.iterrows():
-        # Split 'Lost' to get the numerical value
-        lost_value = row['Lost'].split('(')[0]
+        # Check if 'Lost' is not None before splitting
+        lost_value = row['Lost'].split('(')[0] if pd.notna(row['Lost']) else '0'
         json_body = (
             f"{db_table},src_ip={row['Src IP addr']},src_port={row['Src Port']},"
             f"dest_ip={row['Dest IP addr']},dest_port={row['Dest Port']},ssrc={row['SSRC']},"
