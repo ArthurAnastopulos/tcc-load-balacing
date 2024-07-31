@@ -57,13 +57,15 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
             payload = fields[7]
             pkts = int(fields[8])
             lost_str = fields[9]
-            min_delta = extract_numeric(fields[10])
-            mean_delta = extract_numeric(fields[11])
-            max_delta = extract_numeric(fields[12])
-            min_jitter = extract_numeric(fields[13])
-            mean_jitter = extract_numeric(fields[14])
-            max_jitter = extract_numeric(fields[15])
-            problems = fields[16] if len(fields) > 16 else ''
+            min_delta = extract_numeric(fields[11])
+            mean_delta = extract_numeric(fields[12])
+            max_delta = extract_numeric(fields[13])
+            min_jitter = extract_numeric(fields[14])
+            mean_jitter = extract_numeric(fields[15])
+            max_jitter = extract_numeric(fields[16])
+            # problems = fields[17] if len(fields) > 16 else ''
+
+            print("Min Delta:", min_delta)
 
             # Convert SSRC from hex to decimal
             ssrc = int(ssrc_hex, 16)
@@ -78,13 +80,14 @@ def process_txt_to_influx(txt_file, url, db, db_table, port):
             lost = extract_numeric(lost_str)
 
             # Create InfluxDB line protocol format
-            json_body = (f"{db_table},SSRC={ssrc},SrcIP={src_ip},DestIP={dest_ip} "
+            json_body = (f"{db_table},SrcIP={src_ip},DestIP={dest_ip} "
                          f"StartTime=\"{start_time_absolute}\",EndTime=\"{end_time_absolute}\","
-                         f"SrcPort={src_port},DestPort={dest_port},Payload=\"{payload}\","
+                         f"SrcPort={src_port},DestPort={dest_port},"
                          f"Pkts={pkts},Lost={lost},MinDelta={min_delta},"
                          f"MeanDelta={mean_delta},MaxDelta={max_delta},"
                          f"MinJitter={min_jitter},MeanJitter={mean_jitter},"
-                         f"MaxJitter={max_jitter},Problems=\"{problems}\"")
+                         f"MaxJitter={max_jitter}")
+            # curl -i -XPOST 'http://localhost:8086/write?db=your_database_name' --data-binary 'network_performance,type=RTP,src_ip=192.168.1.1,dst_ip=192.168.1.2,src_port=1234,dst_port=5678 protocol="UDP",length=128 sequence_number=123 rtp_timestamp=456 rtp_stream="stream1" 1596518400000000000'
 
             write_to_influxdb_http(url, db, port, json_body)
 
