@@ -1,9 +1,6 @@
-import time
 import requests
 import argparse
-import pandas as pd
-import csv
-from datetime import datetime
+from datetime import datetime, timedelta
 
 def write_to_influxdb_http(url, db, port, json_body):
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -17,44 +14,91 @@ def write_to_influxdb_http(url, db, port, json_body):
     else:
         print(f"Error writing data: {response.text}")
 
-def process_csv_to_influx(csv_file, url, db, db_table, port):
-    df = pd.read_csv(csv_file, delimiter=' ', skipinitialspace=True)
+def extract_numeric(value):
+    """ Extracts numeric value from a string that may contain additional characters """
+    try:
+        return float(value.split()[0])
+    except ValueError:
+        return None
 
-    # Print headers for debugging
-    print("CSV Headers:", df.columns)
+def process_txt_to_influx(txt_file, url, db, db_table, port):
+    with open(txt_file, 'r') as file:
+        lines = file.readlines()
 
-    for index, row in df.iterrows():
-        print("Processing row:", row.to_dict())  # Debugging
+    # Identify the start of the data section
+    data_started = False
+    for line in lines:
+        line = line.strip()
+        
+        # Skip header and separator lines
+        if line.startswith('=') or not line:
+            continue
+        
+        if not data_started:
+            # Find the line where data starts
+            if line.startswith('Start time'):
+                data_started = True
+            continue
 
-        # try:
-        #     start_time = datetime.strptime(row['Start time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        #     end_time = datetime.strptime(row['End time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        # Split line into fields
+        fields = line.split()
+        if len(fields) < 16:
+            print(f"Skipping malformed line: {line}")
+            continue
 
-        #     measurement = 'rtp_stream'
-        #     tags = f"SSRC={row['SSRC']},SrcIP={row['Src IP addr']},DestIP={row['Dest IP addr']}"
-        #     json_body = (f"StartTime=\"{start_time}\",EndTime=\"{end_time}\","
-        #                 f"SrcPort={row['Port']},DestPort={row['Port']},"
-        #                 f"Payload=\"{row['Payload']}\",Pkts={row['Pkts']},"
-        #                 f"Lost={row['Lost']},MinDelta={row['Min Delta(ms)']},"
-        #                 f"MeanDelta={row['Mean Delta(ms)']},MaxDelta={row['Max Delta(ms)']},"
-        #                 f"MinJitter={row['Min Jitter(ms)']},MeanJitter={row['Mean Jitter(ms)']},"
-        #                 f"MaxJitter={row['Max Jitter(ms)']},Problems=\"{row['Problems?']}\"")
+        try:
+            start_time = fields[0]
+            end_time = fields[1]
+            src_ip = fields[2]
+            src_port = int(fields[3])
+            dest_ip = fields[4]
+            dest_port = int(fields[5])
+            ssrc_hex = fields[6]
+            payload = fields[7]
+            pkts = int(fields[8])
+            lost_str = fields[9]
+            min_delta = extract_numeric(fields[10])
+            mean_delta = extract_numeric(fields[11])
+            max_delta = extract_numeric(fields[12])
+            min_jitter = extract_numeric(fields[13])
+            mean_jitter = extract_numeric(fields[14])
+            max_jitter = extract_numeric(fields[15])
+            problems = fields[16] if len(fields) > 16 else ''
 
-        #     write_to_influxdb_http(url, db, port, json_body)
+            # Convert SSRC from hex to decimal
+            ssrc = int(ssrc_hex, 16)
 
-        # except KeyError as e:
-        #     print(f"KeyError: Missing column {e} in row {row.to_dict()}")
-        # except ValueError as e:
-        #     print(f"ValueError: Issue with data formatting in row {row.to_dict()}")
-                
+            # Convert time to ISO format
+            absolute_start_time = "2024-07-31 12:00:00"
+            start_time_ = datetime.strptime(absolute_start_time, "%Y-%m-%d %H:%M:%S")
+            start_time_absolute = start_time_ + timedelta(seconds=float(start_time))
+            end_time_absolute = start_time_ + timedelta(seconds=float(end_time))
+
+            # Extract numeric part of 'lost'
+            lost = extract_numeric(lost_str)
+
+            # Create InfluxDB line protocol format
+            json_body = (f"{db_table},SSRC={ssrc},SrcIP={src_ip},DestIP={dest_ip} "
+                         f"StartTime=\"{start_time_absolute}\",EndTime=\"{end_time_absolute}\","
+                         f"SrcPort={src_port},DestPort={dest_port},Payload=\"{payload}\","
+                         f"Pkts={pkts},Lost={lost},MinDelta={min_delta},"
+                         f"MeanDelta={mean_delta},MaxDelta={max_delta},"
+                         f"MinJitter={min_jitter},MeanJitter={mean_jitter},"
+                         f"MaxJitter={max_jitter},Problems=\"{problems}\"")
+
+            write_to_influxdb_http(url, db, port, json_body)
+
+        except (ValueError, IndexError) as e:
+            print(f"Error processing line: {line}")
+            print(f"Exception: {e}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Send RTP stream data to InfluxDB')
-    parser.add_argument('csv_file', type=str, help='Path to the CSV file containing RTP stream data')
+    parser.add_argument('txt_file', type=str, help='Path to the TXT file containing RTP stream data')
     parser.add_argument('--url', type=str, default='localhost', help='InfluxDB URL')
     parser.add_argument('--db', type=str, default='mydb', help='InfluxDB database name')
     parser.add_argument('--table', type=str, default='rtp_stream', help='InfluxDB Table name')
     parser.add_argument('--port', type=int, default=8086, help='InfluxDB port')
 
     args = parser.parse_args()
-    process_csv_to_influx(args.csv_file, args.url, args.db, args.table, args.port)
+    process_txt_to_influx(args.txt_file, args.url, args.db, args.table, args.port)
