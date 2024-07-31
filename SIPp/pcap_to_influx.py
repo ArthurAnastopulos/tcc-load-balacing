@@ -16,8 +16,16 @@ def write_to_influxdb_http(url, db, port, json_body):
         print(f"Error writing data: {response.text}")
 
 def process_csv_to_influx(csv_file, url, db, db_table, port):
+    # Read the CSV file
     df = pd.read_csv(csv_file, delimiter=' ', skipinitialspace=True)
-    
+
+    # Strip whitespace from column names
+    df.columns = df.columns.str.strip()
+
+    # Print column names for debugging
+    print("Column names in the CSV:", df.columns.tolist())
+
+    # Iterate through the DataFrame rows and create JSON body for InfluxDB
     for _, row in df.iterrows():
         json_body = f"{db_table},src_ip={row['Src IP addr']},src_port={row['Port']},dest_ip={row['Dest IP addr']},dest_port={row['Port.1']} "
         json_body += f"pkts={row['Pkts']},lost={row['Lost'].split('(')[0]},min_delta={row['Min Delta(ms)']},"
