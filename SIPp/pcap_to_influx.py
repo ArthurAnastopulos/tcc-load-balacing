@@ -21,9 +21,6 @@ def process_csv_to_influx(csv_file, url, db, db_table, port):
     with open(csv_file, 'r') as infile:
         reader = csv.DictReader(infile)
         
-        # Skip the first line if it's a header or irrelevant data
-        next(reader, None)
-
         for row in reader:
             # Prepare the timestamp in InfluxDB format (ns precision)
             start_time = datetime.strptime(row['Start time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
