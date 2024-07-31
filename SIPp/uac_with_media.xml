@@ -84,15 +84,15 @@
   <!-- Play a wav file (RTP stream)                       -->
   <nop>
     <action>
-      <exec rtp_stream="audio/alo.wav,1,8,PCMA/8000"/>
+      <exec rtp_stream="audio/betinho.wav,1,8,PCMA/8000"/>
     </action>
   </nop>
 
   <!-- Pause 2 minutes, which is approximately the duration of the      -->
   <!-- PCAP file                                                        -->
-  <!-- <pause milliseconds="130000"/> -->
+  <pause milliseconds="120000"/>
 
-  <pause milliseconds="1000"/>
+  <!-- <pause milliseconds="1000"/> -->
 
   <!-- The 'crlf' option inserts a blank line in the statistics report. -->
   <send retrans="500">
