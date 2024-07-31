@@ -30,8 +30,8 @@ if __name__ == "__main__":
     parser.add_argument('csv_file', type=str, help='Path to the CSV file containing RTP stream data')
     parser.add_argument('--url', type=str, default='localhost', help='InfluxDB URL')
     parser.add_argument('--db', type=str, default='mydb', help='InfluxDB database name')
-    parser.add_argument('--port', type=int, default=8086, help='InfluxDB port')
     parser.add_argument('--table', type=str, default='rtp_stream', help='InfluxDB Table name')
+    parser.add_argument('--port', type=int, default=8086, help='InfluxDB port')
 
     args = parser.parse_args()
-    process_csv_to_influx(args.csv_file, args.url, args.db, args.port)
+    process_csv_to_influx(args.csv_file, args.url, args.db, args.db_table, args.port)
