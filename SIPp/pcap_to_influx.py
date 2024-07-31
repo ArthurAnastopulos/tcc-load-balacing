@@ -4,7 +4,6 @@ import argparse
 import pandas as pd
 import csv
 from datetime import datetime
-import subprocess
 
 def write_to_influxdb_http(url, db, port, json_body):
     headers = {'Content-Type': 'application/x-www-form-urlencoded'}
@@ -18,71 +17,44 @@ def write_to_influxdb_http(url, db, port, json_body):
     else:
         print(f"Error writing data: {response.text}")
 
-def get_tshark_rtp_streams(pcap_file):
-    # Run tshark command and capture output
-    command = ['tshark', '-r', pcap_file, '-q', '-z', 'rtp,streams']
-    result = subprocess.run(command, capture_output=True, text=True)
-    return result.stdout
-
-def parse_tshark_output(output):
-    lines = output.splitlines()
-    data = []
-
-    # Start processing lines after the header
-    is_data_section = False
-    for line in lines:
-        # Skip lines with '======' and headers
-        if '=====' in line:
-            is_data_section = not is_data_section
-            continue
+def process_csv_to_influx(csv_file, url, db, db_table, port):
+    df = pd.read_csv(csv_file, delimiter=' ')  # Adjust delimiter as needed
         
-        if is_data_section:
-            # Split and clean up the line
-            columns = line.split()
-            # Ensure there are enough columns
-            if len(columns) >= 16:
-                data.append(columns)
+    # Print headers for debugging
+    print("CSV Headers:", df.columns)
 
-    # Create a DataFrame
-    df = pd.DataFrame(data, columns=[
-        'Start time', 'End time', 'Src IP addr', 'Src Port', 'Dest IP addr', 'Dest Port',
-        'SSRC', 'Payload', 'Pkts', 'Lost', 'Min Delta(ms)', 'Mean Delta(ms)', 'Max Delta(ms)',
-        'Min Jitter(ms)', 'Mean Jitter(ms)', 'Max Jitter(ms)', 'Problems?'
-    ])
+    for index, row in df.iterrows():
+        print("Processing row:", row.to_dict())  # Debugging
 
-    return df
+        # try:
+        #     start_time = datetime.strptime(row['Start time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        #     end_time = datetime.strptime(row['End time'], '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
 
-def process_csv_to_influx(df, url, db, db_table, port):
-    for _, row in df.iterrows():
-            try:
-                start_time = datetime.strptime(row['Start time'].strip(), '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-                end_time = datetime.strptime(row['End time'].strip(), '%S.%f').strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        #     measurement = 'rtp_stream'
+        #     tags = f"SSRC={row['SSRC']},SrcIP={row['Src IP addr']},DestIP={row['Dest IP addr']}"
+        #     json_body = (f"StartTime=\"{start_time}\",EndTime=\"{end_time}\","
+        #                 f"SrcPort={row['Port']},DestPort={row['Port']},"
+        #                 f"Payload=\"{row['Payload']}\",Pkts={row['Pkts']},"
+        #                 f"Lost={row['Lost']},MinDelta={row['Min Delta(ms)']},"
+        #                 f"MeanDelta={row['Mean Delta(ms)']},MaxDelta={row['Max Delta(ms)']},"
+        #                 f"MinJitter={row['Min Jitter(ms)']},MeanJitter={row['Mean Jitter(ms)']},"
+        #                 f"MaxJitter={row['Max Jitter(ms)']},Problems=\"{row['Problems?']}\"")
 
-                json_body = (f"{db_table},StartTime=\"{start_time}\",EndTime=\"{end_time}\","
-                          f"SrcPort={row['Src Port'].strip()},DestPort={row['Dest Port'].strip()},"
-                          f"Payload=\"{row['Payload'].strip()}\",Pkts={row['Pkts'].strip()},"
-                          f"Lost={row['Lost'].strip()},MinDelta={row['Min Delta(ms)'].strip()},"
-                          f"MeanDelta={row['Mean Delta(ms)'].strip()},MaxDelta={row['Max Delta(ms)'].strip()},"
-                          f"MinJitter={row['Min Jitter(ms)'].strip()},MeanJitter={row['Mean Jitter(ms)'].strip()},"
-                          f"MaxJitter={row['Max Jitter(ms)'].strip()},Problems=\"{row['Problems?'].strip()}\"")
+        #     write_to_influxdb_http(url, db, port, json_body)
 
-                write_to_influxdb_http(url, db, port, json_body)
-
-            except KeyError as e:
-                print(f"KeyError: Missing column {e} in row {row.to_dict()}")
-            except ValueError as e:
-                print(f"ValueError: Issue with data formatting in row {row.to_dict()}")
-
+        # except KeyError as e:
+        #     print(f"KeyError: Missing column {e} in row {row.to_dict()}")
+        # except ValueError as e:
+        #     print(f"ValueError: Issue with data formatting in row {row.to_dict()}")
+                
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Send RTP stream data to InfluxDB')
-    parser.add_argument('pcap_file', type=str, help='Path to the pcap file containing RTP stream data')
+    parser.add_argument('csv_file', type=str, help='Path to the CSV file containing RTP stream data')
     parser.add_argument('--url', type=str, default='localhost', help='InfluxDB URL')
     parser.add_argument('--db', type=str, default='mydb', help='InfluxDB database name')
     parser.add_argument('--table', type=str, default='rtp_stream', help='InfluxDB Table name')
     parser.add_argument('--port', type=int, default=8086, help='InfluxDB port')
 
     args = parser.parse_args()
-    output = get_tshark_rtp_streams(args.pcap_file)
-    df = parse_tshark_output(output)
-    process_csv_to_influx(df, args.url, args.db, args.table, args.port)
+    process_csv_to_influx(args.csv_file, args.url, args.db, args.table, args.port)
