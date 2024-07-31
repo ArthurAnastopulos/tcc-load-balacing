@@ -34,4 +34,4 @@ if __name__ == "__main__":
     parser.add_argument('--port', type=int, default=8086, help='InfluxDB port')
 
     args = parser.parse_args()
-    process_csv_to_influx(args.csv_file, args.url, args.db, args.db_table, args.port)
+    process_csv_to_influx(args.csv_file, args.url, args.db, args.table, args.port)
