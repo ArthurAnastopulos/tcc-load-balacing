@@ -16,26 +16,31 @@ def write_to_influxdb_http(url, db, port, json_body):
         print(f"Error writing data: {response.text}")
 
 def process_csv_to_influx(csv_file, url, db, db_table, port):
-    # Read the CSV file, skipping the first row, and using a regex to handle multiple spaces
-    df = pd.read_csv(csv_file, delimiter=r'\s+', skiprows=1)
+    # Define the correct column names
+    column_names = ['Start time', 'End time', 'Src IP addr', 'Src Port', 'Dest IP addr', 'Dest Port', 'SSRC',
+                    'Payload', 'Pkts', 'Lost', 'Min Delta(ms)', 'Mean Delta(ms)', 'Max Delta(ms)', 
+                    'Min Jitter(ms)', 'Mean Jitter(ms)', 'Max Jitter(ms)', 'Problems?']
+
+    # Read the CSV file, skipping the first two rows and using predefined column names
+    df = pd.read_csv(csv_file, delimiter='\s+', skiprows=2, names=column_names, engine='python')
 
     # Print column names for debugging
     print("Column names in the CSV:", df.columns.tolist())
 
-    # Rename columns to match expected names
-    expected_columns = [
-        'Start time', 'End time', 'Src IP addr', 'Port', 'Dest IP addr', 'Port.1',
-        'SSRC', 'Payload', 'Pkts', 'Lost', 'Min Delta(ms)', 'Mean Delta(ms)',
-        'Max Delta(ms)', 'Min Jitter(ms)', 'Mean Jitter(ms)', 'Max Jitter(ms)', 'Problems?'
-    ]
-    df.columns = expected_columns[:len(df.columns)]
-
     # Iterate through the DataFrame rows and create JSON body for InfluxDB
     for _, row in df.iterrows():
-        json_body = f"{db_table},src_ip={row['Src IP addr']},src_port={row['Port']},dest_ip={row['Dest IP addr']},dest_port={row['Port.1']} "
-        json_body += f"pkts={row['Pkts']},lost={row['Lost'].split('(')[0]},min_delta={row['Min Delta(ms)']},"
-        json_body += f"mean_delta={row['Mean Delta(ms)']},max_delta={row['Max Delta(ms)']},min_jitter={row['Min Jitter(ms)']},"
-        json_body += f"mean_jitter={row['Mean Jitter(ms)']},max_jitter={row['Max Jitter(ms)']}"
+        # Split 'Lost' to get the numerical value
+        lost_value = row['Lost'].split('(')[0]
+        json_body = (
+            f"{db_table},src_ip={row['Src IP addr']},src_port={row['Src Port']},"
+            f"dest_ip={row['Dest IP addr']},dest_port={row['Dest Port']},ssrc={row['SSRC']},"
+            f"payload={row['Payload']} "
+            f"start_time={row['Start time']},end_time={row['End time']},pkts={row['Pkts']},"
+            f"lost={lost_value},min_delta={row['Min Delta(ms)']},mean_delta={row['Mean Delta(ms)']},"
+            f"max_delta={row['Max Delta(ms)']},min_jitter={row['Min Jitter(ms)']},"
+            f"mean_jitter={row['Mean Jitter(ms)']},max_jitter={row['Max Jitter(ms)']},"
+            f"problems=\"{row['Problems?']}\""
+        )
         write_to_influxdb_http(url, db, port, json_body)
 
 if __name__ == "__main__":
