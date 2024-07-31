@@ -19,9 +19,6 @@ def process_csv_to_influx(csv_file, url, db, db_table, port):
     # Read the CSV file, skipping the first row
     df = pd.read_csv(csv_file, delimiter=' ', skiprows=1, skipinitialspace=True)
 
-    # Strip whitespace from column names
-    df.columns = df.columns.str.strip()
-
     # Print column names for debugging
     print("Column names in the CSV:", df.columns.tolist())
 
