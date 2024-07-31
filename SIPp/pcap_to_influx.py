@@ -16,8 +16,8 @@ def write_to_influxdb_http(url, db, port, json_body):
         print(f"Error writing data: {response.text}")
 
 def process_csv_to_influx(csv_file, url, db, db_table, port):
-    # Read the CSV file
-    df = pd.read_csv(csv_file, delimiter=' ', skipinitialspace=True)
+    # Read the CSV file, skipping the first row
+    df = pd.read_csv(csv_file, delimiter=' ', skiprows=1, skipinitialspace=True)
 
     # Strip whitespace from column names
     df.columns = df.columns.str.strip()
