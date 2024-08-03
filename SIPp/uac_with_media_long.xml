@@ -90,7 +90,7 @@
 
   <!-- Pause 2 minutes, which is approximately the duration of the      -->
   <!-- PCAP file                                                        -->
-  <pause milliseconds="120000"/>
+  <pause milliseconds="30000"/>
 
   <!-- <pause milliseconds="1000"/> -->
 
