@@ -1,4 +1,3 @@
-import requests
 import argparse
 from datetime import datetime, timedelta
 import matplotlib.dates as mdates
@@ -109,9 +108,9 @@ def plot_metrics(timestamps, latencies, jitters):
 
     plt.subplot(2, 1, 1)
     plt.plot(timestamps, latencies, linestyle='-', color='b')
-    plt.title('Latency Over Time')
-    plt.xlabel('Time')
-    plt.ylabel('Latency (ms)')
+    # plt.title('Latency Over Time')
+    plt.xlabel('Tempo')
+    plt.ylabel('Latência (ms)')
     plt.grid(True)
     plt.gca().xaxis.set_major_formatter(time_format)  # Set the formatter for the x-axis
     plt.xticks(rotation=45)
@@ -119,8 +118,8 @@ def plot_metrics(timestamps, latencies, jitters):
 
     plt.subplot(2, 1, 2)
     plt.plot(timestamps, jitters, linestyle='-', color='r')
-    plt.title('Jitter Over Time')
-    plt.xlabel('Time')
+    # plt.title('Jitter Over Time')
+    plt.xlabel('Tempo')
     plt.ylabel('Jitter (ms)')
     plt.grid(True)
     plt.gca().xaxis.set_major_formatter(time_format)  # Set the formatter for the x-axis
@@ -136,9 +135,9 @@ def plot_loss_jitter_relation(losses, jitters):
     hb = plt.hexbin(losses, jitters, gridsize=50, cmap='viridis', mincnt=1)
     plt.colorbar(hb, label='Count')
 
-    plt.title('Hexbin Plot of Jitter vs. Packet Loss')
-    plt.xlabel('Packet Loss Percentage')
-    plt.ylabel('Mean Jitter')
+    # plt.title('Plot of Jitter vs. Packet Loss')
+    plt.xlabel('Porcentagem de perda de pacotes')
+    plt.ylabel('Jitter (ms)')
     plt.grid(True)
     plt.tight_layout()
     plt.show()
@@ -149,15 +148,15 @@ def plot_loss_latencies_relation(latencies, jitters):
     hb = plt.hexbin(latencies, jitters, gridsize=50, cmap='viridis', mincnt=1)
     plt.colorbar(hb, label='Count')
 
-    plt.title('Hexbin Plot of latencies vs. Packet Loss')
-    plt.xlabel('Packet Loss Percentage')
-    plt.ylabel('Mean latencies')
+    # plt.title('Hexbin Plot of latencies vs. Packet Loss')
+    plt.xlabel('Porcentagem de perda de pacotes')
+    plt.ylabel('Latência Média')
     plt.grid(True)
     plt.tight_layout()
     plt.show()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Send RTP stream data to InfluxDB and plot metrics')
+    parser = argparse.ArgumentParser(description='Extract RTP Stream and plot metrics')
     parser.add_argument('txt_file', type=str, help='Path to the TXT file containing RTP stream data')
 
     args = parser.parse_args()
