@@ -36,11 +36,11 @@ def process_txt(txt_file):
     data_started = False
     for line in lines:
         line = line.strip()
-        
+
         # Skip header and separator lines
         if line.startswith('=') or not line:
             continue
-        
+
         if not data_started:
             # Find the line where data starts
             if line.startswith('Start time'):
@@ -79,7 +79,7 @@ def process_txt(txt_file):
             start_time_ = datetime.strptime(absolute_start_time, "%H:%M:%S")
             start_time_absolute = start_time_ + timedelta(seconds=float(start_time))
             end_time_absolute = start_time_ + timedelta(seconds=float(end_time))
-            
+
             timestamp_ns = int(start_time_absolute.timestamp())
             # Extract numeric part of 'lost'
             lost = extract_numeric(lost_str)
@@ -98,11 +98,11 @@ def process_txt(txt_file):
 
     # Plot metrics
     plot_metrics(timestamps, latencies, jitters)
-    plot_loss_jitter_relation(losses, jitters)
-    plot_loss_latencies_relation(latencies, jitters)
+
 
 def plot_metrics(timestamps, latencies, jitters):
     plt.figure(figsize=(14, 7))
+
 
     time_format = mdates.DateFormatter('%H:%M:%S')  # Formatter for the time part only
 
@@ -115,6 +115,7 @@ def plot_metrics(timestamps, latencies, jitters):
     plt.gca().xaxis.set_major_formatter(time_format)  # Set the formatter for the x-axis
     plt.xticks(rotation=45)
     plt.xlim([min(timestamps), max(timestamps)])
+    plt.ylim([0, 50])
 
     plt.subplot(2, 1, 2)
     plt.plot(timestamps, jitters, linestyle='-', color='r')
@@ -125,33 +126,8 @@ def plot_metrics(timestamps, latencies, jitters):
     plt.gca().xaxis.set_major_formatter(time_format)  # Set the formatter for the x-axis
     plt.xticks(rotation=45)
     plt.xlim([min(timestamps), max(timestamps)])
+    plt.ylim([0, 10])
 
-    plt.tight_layout()
-    plt.show()
-
-def plot_loss_jitter_relation(losses, jitters):
-    plt.figure(figsize=(14, 7))
-
-    hb = plt.hexbin(losses, jitters, gridsize=50, cmap='viridis', mincnt=1)
-    plt.colorbar(hb, label='Count')
-
-    # plt.title('Plot of Jitter vs. Packet Loss')
-    plt.xlabel('Porcentagem de perda de pacotes')
-    plt.ylabel('Jitter (ms)')
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
-
-def plot_loss_latencies_relation(latencies, jitters):
-    plt.figure(figsize=(14, 7))
-
-    hb = plt.hexbin(latencies, jitters, gridsize=50, cmap='viridis', mincnt=1)
-    plt.colorbar(hb, label='Count')
-
-    # plt.title('Hexbin Plot of latencies vs. Packet Loss')
-    plt.xlabel('Porcentagem de perda de pacotes')
-    plt.ylabel('Latência Média')
-    plt.grid(True)
     plt.tight_layout()
     plt.show()
 
